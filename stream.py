@@ -1,68 +1,71 @@
 import os
 import time
 import subprocess
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# === 🔐 YouTube Stream Key (safe way: env var from Render) ===
-# Render.com me Environment Variable add karo:
-# Key: YOUTUBE_STREAM_KEY
-# Value: cfuu-58e3-365k-em52-0ba6
-STREAM_KEY = os.getenv("YOUTUBE_STREAM_KEY", "cfuu-58e3-365k-em52-0ba6")
+# === 🔑 Apna YouTube Stream Key yahan likho ===
+STREAM_KEY = "cfuu-58e3-365k-em52-0ba6"
 
-# === 🎞️ Tumhare video file names (repo ke andar hone chahiye) ===
+# === 🎵 Tumhare videos ke names (GitHub repo ke andar) ===
 VIDEOS = [
     "Lofi Beats to Study, Relax & Sleep 🌙 _ MrCrazyAshu.mp4",
     "1YOUR_VIDEO_NAME.mp4",
     "YOUR_VIDEO_NAME.mp4"
 ]
 
-# === 🌐 YouTube RTMP URL ===
+# === 📡 YouTube RTMP Server URL ===
 YOUTUBE_URL = f"rtmp://a.rtmp.youtube.com/live2/{STREAM_KEY}"
 
-# === ⚙️ FFmpeg streaming settings ===
-FFMPEG_OPTIONS = [
-    "-re",
-    "-c:v", "libx264",
-    "-preset", "veryfast",
-    "-maxrate", "3000k",
-    "-bufsize", "6000k",
-    "-pix_fmt", "yuv420p",
-    "-g", "50",
-    "-c:a", "aac",
-    "-b:a", "128k",
-    "-ar", "44100",
-    "-f", "flv"
-]
-
 def stream_video(video):
-    """Stream a single video file to YouTube."""
+    """Ek single video ko YouTube par stream karta hai"""
     try:
-        print(f"\n🚀 Now Streaming: {video}")
+        print(f"\n🚀 Starting stream: {video}")
         command = [
             "ffmpeg",
-            "-stream_loop", "-1",  # 🔁 repeat video forever
-            "-i", video
-        ] + FFMPEG_OPTIONS + [YOUTUBE_URL]
-
-        subprocess.run(command, check=True)
-        print(f"✅ Finished streaming: {video}")
-
-    except subprocess.CalledProcessError as e:
-        print(f"⚠️ FFmpeg error while streaming {video}: {e}")
-        print("🔁 Restarting stream in 10 seconds...")
-        time.sleep(10)
+            "-re",
+            "-i", video,
+            "-vcodec", "libx264",
+            "-preset", "veryfast",
+            "-maxrate", "3000k",
+            "-bufsize", "6000k",
+            "-pix_fmt", "yuv420p",
+            "-g", "50",
+            "-acodec", "aac",
+            "-b:a", "128k",
+            "-ar", "44100",
+            "-f", "flv",
+            YOUTUBE_URL
+        ]
+        subprocess.run(command)
     except Exception as e:
-        print(f"💥 Unexpected error: {e}")
-        time.sleep(10)
+        print(f"❌ Error streaming {video}: {e}")
 
-def main():
-    print("🎧 MrCrazyAshu 24×7 Lofi Stream Bot Starting...\n")
+def start_stream_loop():
+    """Ye function videos ko continuous loop me stream karta rahega"""
     while True:
         for video in VIDEOS:
             if os.path.exists(video):
                 stream_video(video)
             else:
-                print(f"❌ File not found: {video}")
-                time.sleep(5)
+                print(f"⚠️ File not found: {video}")
+            time.sleep(5)
+
+# === 🌐 Fake HTTP server to keep Render service alive ===
+class KeepAliveHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Server is alive and streaming!")
+
+def run_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("", port), KeepAliveHandler)
+    print(f"🌍 Keep-alive server running on port {port}")
+    server.serve_forever()
 
 if __name__ == "__main__":
-    main()
+    # Start fake HTTP server in background thread
+    threading.Thread(target=run_server, daemon=True).start()
+    # Start YouTube stream loop
+    start_stream_loop()
