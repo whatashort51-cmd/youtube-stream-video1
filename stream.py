@@ -7,8 +7,8 @@ STREAM_KEY = "cfuu-58e3-365k-em52-0ba6"
 
 # === 🎬 Tumhare videos ke names (GitHub repo ke andar) ===
 VIDEOS = [
-    "1YOUR_VIDEO_NAME.mp4",
-    "YOUR_VIDEO_NAME.mp4",
+    "1YOUR_VIDEO_NAME.mp4.mp4",
+    "YOUR_VIDEO_NAME.mp4.mp4",
     "Lofi Beats to Study, Relax & Sleep 🌙 _ MrCrazyAshu.mp4"
 ]
 
