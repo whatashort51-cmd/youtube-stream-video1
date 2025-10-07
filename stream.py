@@ -21,9 +21,9 @@ def stream_video(video_path):
         "-stream_loop", "1",  # loop single file
         "-i", video_path,
         "-vcodec", "libx264",
-        "-preset", "veryfast",
-        "-maxrate", "3000k",
-        "-bufsize", "6000k",
+        "-preset", "superfast",
+        "-maxrate", "1800k",
+        "-bufsize", "1800k",
         "-pix_fmt", "yuv420p",
         "-g", "60",
         "-acodec", "aac",
