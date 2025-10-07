@@ -1,60 +1,61 @@
 import os
-import time
 import subprocess
 import threading
+import time
 from flask import Flask
 
-# === 🔑 Apna YouTube Stream Key yahan likho ===
-STREAM_KEY = "cfuu-58e3-365k-em52-0ba6"
-
-# === 🎥 Tumhare videos ke names (GitHub repo ke andar) ===
-VIDEOS = [
-    "Lofi Beats to Study, Relax & Sleep _ MrCrazyAshu.mp4",
-    "1YOUR_VIDEO_NAME.mp4",
-    "YOUR_VIDEO_NAME.mp4"
-]
-
-# === 🧠 YouTube RTMP URL ===
-YOUTUBE_RTMP_URL = f"rtmp://a.rtmp.youtube.com/live2/{STREAM_KEY}"
-
-# === ⚙️ Function: Ek video stream karne ke liye ===
-def stream_video(video_path):
-    print(f"🎬 Streaming video: {video_path}")
-    command = [
-        "ffmpeg",
-        "-re", "-i", video_path,
-        "-c:v", "libx264", "-preset", "veryfast", "-b:v", "4500k",
-        "-maxrate", "4500k", "-bufsize", "9000k",
-        "-pix_fmt", "yuv420p", "-g", "50",
-        "-c:a", "aac", "-b:a", "160k",
-        "-ar", "44100",
-        "-f", "flv", YOUTUBE_RTMP_URL
-    ]
-    subprocess.run(command)
-    print(f"✅ Finished streaming: {video_path}")
-
-# === ♾️ Loop: sab videos ko ek ke baad ek stream karega ===
-def start_stream_loop():
-    while True:
-        for video in VIDEOS:
-            if os.path.exists(video):
-                stream_video(video)
-            else:
-                print(f"⚠️ Video not found: {video}")
-            time.sleep(5)  # 5 sec delay between videos
-
-# === 🌐 Flask Web App (Render ke liye) ===
 app = Flask(__name__)
 
+# ====== CONFIGURATION ======
+# Choose one of your video options here 👇
+# Uncomment (remove #) from the video you want to stream
+
+# VIDEO_FILE = "1YOUR_VIDEO_NAME.mp4"
+# VIDEO_FILE = "Lofi Beats to Study, Relax & Sleep 🌙 _ MrCrazyAshu.mp4"
+VIDEO_FILE = "YOUR_VIDEO_NAME.mp4"   # ← current active video
+
+YOUTUBE_KEY = "cfuu-58e3-365k-em52-0ba6"  # your YouTube stream key
+YOUTUBE_RTMP_URL = f"rtmp://a.rtmp.youtube.com/live2/{YOUTUBE_KEY}"
+
+# ====== STREAM FUNCTION ======
+def start_stream():
+    while True:
+        try:
+            print(f"🔴 Starting YouTube Live Stream with: {VIDEO_FILE}")
+            command = [
+                "ffmpeg",
+                "-re",
+                "-stream_loop", "-1",
+                "-i", VIDEO_FILE,
+                "-vcodec", "libx264",
+                "-preset", "veryfast",
+                "-maxrate", "3000k",
+                "-bufsize", "6000k",
+                "-pix_fmt", "yuv420p",
+                "-g", "50",
+                "-acodec", "aac",
+                "-b:a", "128k",
+                "-ar", "44100",
+                "-f", "flv",
+                YOUTUBE_RTMP_URL
+            ]
+            subprocess.run(command)
+            print("⚠️ Stream ended or failed, retrying in 10 seconds...")
+            time.sleep(10)
+        except Exception as e:
+            print("❌ Error:", e)
+            time.sleep(10)
+
+# ====== KEEP SERVER ALIVE ======
 @app.route('/')
 def home():
-    return "🎥 YouTube 24x7 Stream Bot is Running Successfully ✅"
+    return f"✅ YouTube 24x7 Stream Bot is Running Successfully!<br>Now Streaming: {VIDEO_FILE}"
 
-# === 🚀 Flask + Stream ko parallel run karne ke liye ===
-def run_flask():
+def keep_alive():
     app.run(host='0.0.0.0', port=10000)
 
+# ====== MAIN EXECUTION ======
 if __name__ == "__main__":
-    print("🚀 Starting YouTube Stream Bot (Web + Stream Mode)...")
-    threading.Thread(target=start_stream_loop, daemon=True).start()
-    run_flask()
+    threading.Thread(target=keep_alive).start()
+    time.sleep(3)
+    start_stream()
