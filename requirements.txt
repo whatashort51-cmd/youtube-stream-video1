@@ -10,3 +10,4 @@ flask
 gunicorn
 requests
 python-dotenv
+ffmpeg-python
